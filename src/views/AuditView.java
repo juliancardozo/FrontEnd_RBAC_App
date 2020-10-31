@@ -5,12 +5,24 @@
  */
 package views;
 
+import dbseguridad.PostgresDBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import javax.swing.table.DefaultTableModel;
+import net.proteanit.sql.DbUtils;
+
 /**
  *
  * @author Usuario
  */
 public class AuditView extends javax.swing.JFrame {
-
+    PostgresDBConnection conect = new PostgresDBConnection();
+    Connection connection = conect.connectToDatabase();
+    //Operations
     /**
      * Creates new form AuditView
      */
@@ -57,6 +69,11 @@ public class AuditView extends javax.swing.JFrame {
 
         jButton1.setText("Login");
         jButton1.setName("btnLogin"); // NOI18N
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -95,6 +112,11 @@ public class AuditView extends javax.swing.JFrame {
 
         jButton2.setText("Logout");
         jButton2.setName("btnLogout"); // NOI18N
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -149,9 +171,9 @@ public class AuditView extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(9, 9, 9)
                         .addComponent(jButton1)))
-                .addGap(18, 18, 18)
-                .addComponent(jLabel3)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel4)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -168,6 +190,90 @@ public class AuditView extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        
+        //Limpio el mensaje de feedback
+        this.jLabel3.setText("");
+        this.jButton1.setEnabled(true);
+        
+        PreparedStatement stmtLogin;
+        PreparedStatement stmtUserRole;
+        PreparedStatement stmtUserRole2;
+        PreparedStatement stmtRolePermission;
+            try {
+                //Hay que hacer el login y devolver el userID
+                String user = this.jTextField1 .getText();
+                String pass = this.jTextField2.getText();
+                String queryLogin = "SELECT user_account_id "
+                        + "FROM User_Account "
+                        + "WHERE user_account_name = ? "
+                        + "AND user_account_password = ?;";
+                
+                stmtLogin = connection.prepareStatement(queryLogin);
+                stmtLogin.setString(1, user);
+                stmtLogin.setString(2, pass);
+                Integer userID = -1;
+                //Consulto por usuario y password.
+                ResultSet rsLogin = stmtLogin.executeQuery();
+                rsLogin.next();
+                userID = rsLogin.getInt("user_account_id");
+                stmtLogin.close();
+                boolean encontroElUsuarioBuscado = true;
+                encontroElUsuarioBuscado = (userID>-1);
+                if(encontroElUsuarioBuscado){
+                    //POR MEDIO DEL USER ID SELECCIONAR DE LA TABLA USER_ROLE
+                    String queryUserRole = "SELECT user_account_id, role_id FROM user_role WHERE user_account_id = ? ;";
+                    String queryUserRole2 = "SELECT user_account_id, role_id FROM user_role WHERE user_account_id = ? ;";
+                    stmtUserRole = connection.prepareStatement(queryUserRole);
+                    stmtUserRole.setInt(1, userID);
+                    stmtUserRole2 = connection.prepareStatement(queryUserRole2);
+                    stmtUserRole2.setInt(1, userID);
+                    ResultSet rsUserRole = stmtUserRole.executeQuery();
+                    ResultSet rsUserRole2 = stmtUserRole2.executeQuery();
+                    jTable2.setModel(DbUtils.resultSetToTableModel(rsUserRole));
+                    stmtUserRole.close();
+                    
+                    Integer idRole;
+                    if(rsUserRole2.next()){
+                        idRole = rsUserRole2.getInt("role_id");
+                        //Por cada role despliego los permisos
+                        String queryRolePermission = "SELECT role_id, permission_id FROM role_permission WHERE role_id = ?;";
+                        stmtRolePermission = connection.prepareStatement(queryRolePermission);
+                        stmtRolePermission.setInt(1, idRole);
+                        ResultSet rsRolePermission = stmtRolePermission.executeQuery();
+                        //Hay que ver si agrega o si sustituye
+                        //TODO como agregar todo de una sola vez.
+                        jTable1.setModel(DbUtils.resultSetToTableModel(rsRolePermission));
+                        stmtRolePermission.close();
+
+                    }
+                    stmtUserRole2.close();                    
+                } else {
+                    this.jLabel3.setText("No se encontro el usuario " + user);
+                }
+            } catch (SQLException sqle) {
+                System.out.println("Error en la ejecución: "
+                    + sqle.getErrorCode() + " " + sqle.getMessage());
+            }
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        this.jTextField1.setText("");
+        this.jTextField2.setText("");
+        DefaultTableModel modelRoles = (DefaultTableModel) this.jTable1.getModel();
+        modelRoles.setRowCount(0);
+        
+        DefaultTableModel modelPermisos = (DefaultTableModel) this.jTable2.getModel();
+        modelPermisos.setRowCount(0);
+        
+        this.jButton2.setEnabled(false);
+        this.jButton1.setEnabled(true);
+        this.jLabel3.setText("");
+
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
