@@ -6,13 +6,19 @@
 package views;
 
 import dbseguridad.PostgresDBConnection;
+import java.awt.Color;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import net.proteanit.sql.DbUtils;
 
 /**
@@ -52,6 +58,7 @@ public class AuditView extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jButton2 = new javax.swing.JButton();
+        jLabel6 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -104,6 +111,7 @@ public class AuditView extends javax.swing.JFrame {
         jTable2.setName("tableRoles"); // NOI18N
         jScrollPane2.setViewportView(jTable2);
 
+        jLabel3.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel3.setName("lblFeedback"); // NOI18N
 
         jLabel4.setText("Roles");
@@ -118,6 +126,9 @@ public class AuditView extends javax.swing.JFrame {
             }
         });
 
+        jLabel6.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        jLabel6.setName("lblFeedback"); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -128,8 +139,7 @@ public class AuditView extends javax.swing.JFrame {
                         .addContainerGap()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 417, Short.MAX_VALUE)
-                            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 460, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(21, 21, 21)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -148,11 +158,13 @@ public class AuditView extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel4)
                             .addComponent(jLabel5))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -171,15 +183,17 @@ public class AuditView extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(9, 9, 9)
                         .addComponent(jButton1)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
                 .addComponent(jLabel4)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(14, 14, 14)
+                .addGap(9, 9, 9)
                 .addComponent(jLabel5)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(33, 33, 33)
                 .addComponent(jButton2)
@@ -196,25 +210,56 @@ public class AuditView extends javax.swing.JFrame {
         
         //Limpio el mensaje de feedback
         this.jLabel3.setText("");
-        this.jButton1.setEnabled(true);
+        this.jButton2.setEnabled(true);
         
         PreparedStatement stmtLogin;
+        PreparedStatement stmtLoginExistUser;
         PreparedStatement stmtUserRole;
         PreparedStatement stmtUserRole2;
         PreparedStatement stmtRolePermission;
-            try {
-                //Hay que hacer el login y devolver el userID
-                String user = this.jTextField1 .getText();
-                String pass = this.jTextField2.getText();
-                String queryLogin = "SELECT user_account_id "
-                        + "FROM User_Account "
-                        + "WHERE user_account_name = ? "
-                        + "AND user_account_password = ?;";
+        //Hay que hacer el login y devolver el userID
+        String user = this.jTextField1 .getText();
+        String pass = this.jTextField2.getText();
+        String queryLogin = "SELECT user_account_id "
+                + "FROM User_Account "
+                + "WHERE user_account_name = ? "
+                + "AND user_account_password = ?;";
+        String queryLoginExistUser = "SELECT user_account_id "
+                + "FROM User_Account "
+                + "WHERE user_account_name = ? ";
+                
+                boolean existeUser = false;
+       
+                if(user.isEmpty()){
+                    this.jLabel3.setForeground(Color.red);
+                    this.jLabel3.setText("Debe ingresar un usuario.");
+                    return;
+                }
+                if(pass.isEmpty()){
+                    this.jLabel3.setForeground(Color.red);
+                    this.jLabel3.setText("Debe ingresar una password.");
+                    return;
+                }
+                try {
+                //IF EXIST
+                Integer userID = -1;
+                stmtLoginExistUser = connection.prepareStatement(queryLoginExistUser);
+                stmtLoginExistUser.setString(1, user);      
+                ResultSet rsLoginExistUser = stmtLoginExistUser.executeQuery();
+                rsLoginExistUser.next();
+                userID = rsLoginExistUser.getInt("user_account_id");
+                stmtLoginExistUser.close();
+               
+                existeUser = (userID>-1);
+                if(existeUser){
+                    //TODO
+                }
+                //YES EXIST CONTINUE 
                 
                 stmtLogin = connection.prepareStatement(queryLogin);
                 stmtLogin.setString(1, user);
                 stmtLogin.setString(2, pass);
-                Integer userID = -1;
+                
                 //Consulto por usuario y password.
                 ResultSet rsLogin = stmtLogin.executeQuery();
                 rsLogin.next();
@@ -224,8 +269,9 @@ public class AuditView extends javax.swing.JFrame {
                 encontroElUsuarioBuscado = (userID>-1);
                 if(encontroElUsuarioBuscado){
                     //POR MEDIO DEL USER ID SELECCIONAR DE LA TABLA USER_ROLE
-                    String queryUserRole = "SELECT user_account_id, role_id FROM user_role WHERE user_account_id = ? ;";
+                    String queryUserRole = "SELECT (select user_account_name from user_account where user_account_id = user_account_id limit 1), (select role_name from role where role_id = role_id limit 1) FROM user_role WHERE user_account_id = ?";
                     String queryUserRole2 = "SELECT user_account_id, role_id FROM user_role WHERE user_account_id = ? ;";
+                    //String queryUserRole2 = "SELECT (select user_account_name from user_account where user_account_id = user_account_id limit 1) as userName, (select role_name from role where role_id = role_id limit 1) as roleName FROM user_role WHERE user_account_id = ?";
                     stmtUserRole = connection.prepareStatement(queryUserRole);
                     stmtUserRole.setInt(1, userID);
                     stmtUserRole2 = connection.prepareStatement(queryUserRole2);
@@ -239,21 +285,32 @@ public class AuditView extends javax.swing.JFrame {
                     if(rsUserRole2.next()){
                         idRole = rsUserRole2.getInt("role_id");
                         //Por cada role despliego los permisos
-                        String queryRolePermission = "SELECT role_id, permission_id FROM role_permission WHERE role_id = ?;";
+                        String queryRolePermission = "SELECT (select role_name from role where role_id = role_id limit 1), permission_description FROM role_permission rp INNER JOIN permission p ON rp.permission_id = p.permission_id WHERE role_id = ?;";
                         stmtRolePermission = connection.prepareStatement(queryRolePermission);
                         stmtRolePermission.setInt(1, idRole);
                         ResultSet rsRolePermission = stmtRolePermission.executeQuery();
-                        //Hay que ver si agrega o si sustituye
-                        //TODO como agregar todo de una sola vez.
                         jTable1.setModel(DbUtils.resultSetToTableModel(rsRolePermission));
                         stmtRolePermission.close();
 
                     }
+                    this.jLabel3.setText("Login succes! Hi! " + user + ".");
+                    this.jLabel3.setForeground(Color.green);
+                    this.jLabel6.setText("Aplicacion 1");
+
                     stmtUserRole2.close();                    
                 } else {
-                    this.jLabel3.setText("No se encontro el usuario " + user);
+                    this.jLabel3.setText("The user not exist in our database. User: " + user);
+                    this.jLabel3.setForeground(Color.red);
                 }
             } catch (SQLException sqle) {
+                if (existeUser){
+                    this.jLabel3.setForeground(Color.red);
+                    this.jLabel3.setText("Please validate the user password. ");
+                } else {
+                    this.jLabel3.setForeground(Color.red);
+                    this.jLabel3.setText("The user not exist in our database. ");
+                }
+               
                 System.out.println("Error en la ejecución: "
                     + sqle.getErrorCode() + " " + sqle.getMessage());
             }
@@ -272,6 +329,8 @@ public class AuditView extends javax.swing.JFrame {
         this.jButton2.setEnabled(false);
         this.jButton1.setEnabled(true);
         this.jLabel3.setText("");
+        this.jLabel6.setText("");
+
 
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -318,6 +377,7 @@ public class AuditView extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jTable1;
@@ -325,4 +385,6 @@ public class AuditView extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
+
+   
 }
