@@ -18,8 +18,8 @@ import java.sql.SQLException;
  * @author adilsonmagalhaes
  */
 public class PostgresDBConnection {
-    //private final String urldb = "jdbc:postgresql://192.168.56.102:5432/postgres";
-    private final String urldb = "jdbc:postgresql://localhost:5433/postgres";
+    private final String urldb = "jdbc:postgresql://192.168.56.102:5432/postgres";
+    //private final String urldb = "jdbc:postgresql://localhost:5433/postgres";
     private final String user = "postgres";
     private final String password = "postgres";
 
